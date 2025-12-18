@@ -6,43 +6,25 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * ServerApp is the main server application for the CO2 Monitoring System.
- * Accepts client connections and delegates each to a separate thread.
- * Uses a fixed thread pool to handle up to 4 concurrent clients.
- * 
- * Usage: java server.ServerApp <port>
- * Example: java server.ServerApp 8080
- * 
- * @author CO2 Monitoring System Team
- * @version 1.0
- */
-public class ServerApp {
-    
+public class Server {
     // Configuration constants
     private static final int MAX_CLIENTS = 4;
     private static final String CSV_FILE_PATH = "data/records.csv";
     
     // Server state
-    private static ServerSocket serverSocket;
-    private static ExecutorService threadPool;
-    private static CSVManager csvManager;
-    private static AtomicInteger clientCounter = new AtomicInteger(0);
-    private static volatile boolean serverRunning = true;
+    private ServerSocket serverSocket;
+    private ExecutorService threadPool;
+    private CSVManager csvManager;
+    private volatile boolean serverRunning = true;
+    private int portNumber;
     
-    /**
-     * Main entry point for the server application.
-     * 
-     * @param args Command line arguments: args[0] = port number
-     */
     public static void main(String[] args) {
         // Validate command line arguments
         if (args.length != 1) {
             System.err.println("ERROR: Invalid arguments");
-            System.err.println("Usage: java server.ServerApp <port>");
-            System.err.println("Example: java server.ServerApp 8080");
+            System.err.println("Usage: java server.Server <port>");
+            System.err.println("Example: java server.Server 8080");
             System.exit(1);
         }
         
@@ -59,40 +41,27 @@ public class ServerApp {
             
         } catch (NumberFormatException e) {
             System.err.println("ERROR: Invalid port number. Must be an integer.");
-            System.err.println("Example: java server.ServerApp 8080");
+            System.err.println("Example: java server.Server 8080");
             System.exit(1);
             return; // Unreachable but satisfies compiler
         }
         
-        // Start the server
-        startServer(port);
+        Server server = new Server(port);
+        server.StartServer();
     }
     
-    /**
-     * Initializes and starts the server.
-     * 
-     * @param port The port number to listen on
-     */
-    private static void startServer(int port) {
+    public Server(int port) {
+        portNumber = port;
+        csvManager = CSVManager.getInstance(CSV_FILE_PATH);
+    }
+
+    public void StartServer() {
         try {
-            // Initialize CSV Manager
-            csvManager = CSVManager.getInstance(CSV_FILE_PATH);
-            System.out.println("╔════════════════════════════════════════════════════╗");
-            System.out.println("║   CO2 MONITORING SYSTEM - SERVER APPLICATION      ║");
-            System.out.println("╚════════════════════════════════════════════════════╝");
-            System.out.println();
-            System.out.println("[Server] CSV Database: " + csvManager.getFilePath());
-            System.out.println("[Server] Current records in database: " + csvManager.getRecordCount());
-            System.out.println();
-            
             // Create server socket
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(portNumber);
             System.out.println("[Server] Server started successfully");
-            System.out.println("[Server] Listening on port: " + port);
+            System.out.println("[Server] Listening on port: " + portNumber);
             System.out.println("[Server] Maximum concurrent clients: " + MAX_CLIENTS);
-            System.out.println("[Server] Waiting for client connections...");
-            System.out.println("[Server] Press Ctrl+C to stop the server");
-            System.out.println("─────────────────────────────────────────────────────");
             
             // Create fixed thread pool (max 4 concurrent clients)
             threadPool = Executors.newFixedThreadPool(MAX_CLIENTS);
@@ -109,31 +78,27 @@ public class ServerApp {
                     // Accept incoming client connection (blocking call)
                     Socket clientSocket = serverSocket.accept();
                     
-                    // Increment client counter and assign ID
-                    int clientId = clientCounter.incrementAndGet();
-                    
                     // Create handler for this client
-                    ClientHandler handler = new ClientHandler(clientSocket, csvManager, clientId);
+                    ClientHandler handler = new ClientHandler(clientSocket, csvManager);
                     
                     // Submit handler to thread pool
                     threadPool.execute(handler);
                     
-                    System.out.println("[Server] New client accepted. Assigned ID: " + clientId);
+                    System.out.println("[Server] New client accepted");
                     
                 } catch (IOException e) {
                     if (serverRunning) {
                         System.err.println("[Server] ERROR accepting client connection: " + e.getMessage());
                     }
-                    // If server is shutting down, this is expected
                 }
             }
             
         } catch (IOException e) {
-            System.err.println("[Server] FATAL ERROR: Could not start server on port " + port);
+            System.err.println("[Server] FATAL ERROR: Could not start server on port " + portNumber);
             System.err.println("[Server] Reason: " + e.getMessage());
             
             if (e.getMessage().contains("Address already in use")) {
-                System.err.println("[Server] Port " + port + " is already in use by another application");
+                System.err.println("[Server] Port " + portNumber + " is already in use by another application");
                 System.err.println("[Server] Try a different port number or stop the conflicting application");
             }
             
@@ -141,11 +106,7 @@ public class ServerApp {
         }
     }
     
-    /**
-     * Shuts down the server gracefully.
-     * Closes server socket and terminates thread pool.
-     */
-    private static void shutdownServer() {
+    private void shutdownServer() {
         serverRunning = false;
         
         System.out.println("[Server] Shutting down server...");
@@ -177,13 +138,6 @@ public class ServerApp {
             }
         }
         
-        // Final statistics
-        System.out.println("─────────────────────────────────────────────────────");
-        System.out.println("[Server] Total clients served: " + clientCounter.get());
-        System.out.println("[Server] Total records in database: " + csvManager.getRecordCount());
         System.out.println("[Server] Server shutdown complete");
-        System.out.println("╔════════════════════════════════════════════════════╗");
-        System.out.println("║              SERVER STOPPED                        ║");
-        System.out.println("╚════════════════════════════════════════════════════╝");
     }
 }
