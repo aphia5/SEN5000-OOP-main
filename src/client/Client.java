@@ -27,7 +27,7 @@ public class Client {
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
             new ReadThread(this.socket, in).start();
-            new WriteThread(this.socket, out, in).start();
+            new WriteThread(this.socket, out).start();
         } catch (UnknownHostException e) {
             System.err.println("[Client] ERROR: Unknown host '" + this.hostname + "'");
             System.err.println("[Client] Please check the hostname or IP address");

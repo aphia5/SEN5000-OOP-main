@@ -14,7 +14,7 @@ public class Validator {
     
     // CO2 reading constraints
     private static final double MIN_CO2 = 0.0;
-    private static final double MAX_CO2 = 10000.0; // Reasonable upper limit
+    private static final double MAX_CO2 = 10000.0;
     
     private Validator() {
         throw new AssertionError("Validator class cannot be instantiated");

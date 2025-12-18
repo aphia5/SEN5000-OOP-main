@@ -20,6 +20,10 @@ public class ReadThread extends Thread {
 
                 switch (msg.getType()) {
 
+                    case REQUEST:
+                        System.out.print(msg.getContent() + " ");
+                        break;
+
                     case MESSAGE:
                         System.out.println(msg.getContent());
                         break;
@@ -30,8 +34,15 @@ public class ReadThread extends Thread {
 
                     case SUCCESS:
                         System.out.println("SUCCESS: " + msg.getContent());
+                        break;
+
+                    case CLOSE:
+                        System.out.println("Thanks for using the application. Goodbye!");
                         socket.close();
+                        reader.close();
                         return;
+                    default:
+                        break;
                 }
             } catch (IOException e) {
                 System.err.println("Fatal IO error: " + e.getMessage());

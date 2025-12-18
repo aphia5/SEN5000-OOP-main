@@ -8,7 +8,8 @@ public class Message implements Serializable {
         RESPONSE,
         ERROR,
         SUCCESS,
-        MESSAGE
+        MESSAGE,
+        CLOSE
     }
 
     private Type type;

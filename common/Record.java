@@ -11,20 +11,9 @@ public class Record {
     private final double co2Reading;
     private final long timestamp;     // Unix timestamp in milliseconds
     
-    public Record(String userId, String postcode, double co2Reading) {
-        // Validate inputs before creating object
-        if (userId == null || userId.trim().isEmpty()) {
-            throw new IllegalArgumentException("User ID cannot be null or empty");
-        }
-        if (postcode == null || postcode.trim().isEmpty()) {
-            throw new IllegalArgumentException("Postcode cannot be null or empty");
-        }
-        if (co2Reading < 0) {
-            throw new IllegalArgumentException("CO2 reading cannot be negative");
-        }
-        
+    public Record(String userId, String postcode, double co2Reading) {        
         this.userId = userId.trim();
-        this.postcode = postcode.trim().toUpperCase(); // Standardize postcode format
+        this.postcode = postcode.trim().toUpperCase();
         this.co2Reading = co2Reading;
         this.timestamp = new Date().getTime(); // Current system time in milliseconds
     }
